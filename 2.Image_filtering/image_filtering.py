@@ -4,7 +4,6 @@ import math
 
 #모든 원소의 합이 1이되는 n * n 사이즈의 행렬 만들기 
 #단,원소의 값은 모두 동일해야한다.
-
 def boxfilter(n):
     assert (n % 2 != 0), "dimension must be odd"
     #모두 1로 채워져있는 n * n 행렬만들기
@@ -45,7 +44,7 @@ def convolve2d(array, filter):
     #2 flip the filter
     filter = np.flip(filter)
 
-    #3 convolution - cross-correlation with fliped filter
+    #3 convolution - cross-correlation with flipped filter
     #(열, 행)
     filtered_array = np.empty((image_y, image_x))
 
@@ -66,12 +65,11 @@ def gaussconvolve2d(array, sigma):
 
     # applying it to the array with convolve2d   
     filtered_array = convolve2d(array, filter)
-
     return filtered_array 
 
 # rgb 이미지를 Grayscale이미지로 변환하고 convolution 연산
 def part1_4():
-    original = Image.open('0b_marilyn.bmp')
+    original = Image.open('3a_lion.bmp')
     #convert rgb image to grayscale
     filtered_img = original.convert('L')
     #convert image to array
@@ -81,11 +79,12 @@ def part1_4():
     filtered_array = gaussconvolve2d(array, 3)
     #convert the array back to unsigned integer format
     filtered_img = Image.fromarray(filtered_array.astype('uint8'))
-    original.show()
-    filtered_img.show()
-    print("--------- part1 ---------")
+    
+    # filtered_img.save('result1_4.bmp', "BMP")
+    # print("--------- part1 ---------")
 
 # RGB이미지에 convolution연산 적용하기
+# image = 이미지 파일의 위치(경로)
 def part2_1(image):
     # get a Guassian filtered low frequency RGB image
     # load a RGB Image (RGB image has a 3 channels)
@@ -93,7 +92,7 @@ def part2_1(image):
     im = Image.open(image)
     array = np.asarray(im)
 
-    # with a relatively large sigma (sigma = 3)
+    # with a relatively large sigma (sigma = 5)
     # filter each of the three color channels seperately
     #Red
     red_array = array[:,:,0]
@@ -113,13 +112,16 @@ def part2_1(image):
     low_freq_array[:,:,1] = green_filtered
     low_freq_array[:,:,2] = blue_filtered
 
-    im.show()
-    Image.fromarray(low_freq_array.astype('uint8')).show()
+    low_freq_img = Image.fromarray(low_freq_array.astype('uint8'))
+    low_freq_img.show()
+    #low_freq_img.save( image + "lf_img.bmp", 'BMP')
+
     print("1.get_low_frequency_array")
     return low_freq_array
 
 
 # High-Frequency 이미지 얻기
+# image = 이미지 파일의 위치(경로)
 def part2_2(image):
     # 1.get_original image
     im = Image.open(image)
@@ -133,15 +135,17 @@ def part2_2(image):
     #plus margin(+128) to avoid minus value
     hf_image = Image.fromarray((high_frequency+128).astype('uint8'))
     hf_image.show()
+    hf_image.save(image + "hg.bmp", 'BMP')
     print("2.get_high_frequency_array")
     return high_frequency
 
 def part2_3():
     # get_low_frequency_image
-    lf = part2_1('3a_lion.bmp')
+    lf = part2_1('1b_mandela.bmp')
 
     # get_high_frequency_image
-    hf = part2_2('3b_tiger.bmp')
+    hf = part2_2('1a_steve.bmp')
+    
 
     # get_hybrid_image
     hybrid_img = lf + hf
@@ -151,8 +155,19 @@ def part2_3():
     hybrid_img = np.clip(hybrid_img, 0, 255)
     hybrid_img = Image.fromarray(hybrid_img.astype('uint8'))
     hybrid_img.show()
+    hybrid_img.save('hybrid_img.bmp', 'BMP')
     return hybrid_img
-    
+
+def my_naive_sub_sampling():
+    im = Image.open('hybrid_img.bmp')
+    array = np.asarray(im)
+    sampled = array[::2, ::2]
+    Image.fromarray(sampled).save('half.bmp', 'bmp')
+    sampled = sampled[::2, ::2]
+    Image.fromarray(sampled).save('half_half.bmp', 'bmp')
+    sampled = sampled[::2, ::2]
+    Image.fromarray(sampled).save('half_half_half.bmp', 'bmp')
+
 #part1_1
 #print(boxfilter(3))
 #print(boxfilter(4))
@@ -170,7 +185,8 @@ def part2_3():
 
 # part1_4()
 
-# part2_1('3a_lion.bmp')
-# part2_2('3a_lion.bmp')
+# part2_1('1b_mandela.bmp')
+# part2_2('1a_steve.bmp')
 
 part2_3()
+# my_naive_sub_sampling();
