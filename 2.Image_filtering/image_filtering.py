@@ -1,5 +1,5 @@
 from PIL import Image
-import numpy as np;
+import numpy as np
 import math
 
 #모든 원소의 합이 1이되는 n * n 사이즈의 행렬 만들기 
@@ -14,7 +14,6 @@ def boxfilter(n):
 
 # 1차원 가우시안 필터 만들기
 def gauss1d(sigma):
-
     #필터의 크기는 시그마의 6배보다 큰 최소 홀수
     n = math.ceil(sigma * 6)
     if (n % 2 == 0) : n = n + 1
@@ -25,6 +24,8 @@ def gauss1d(sigma):
     array = np.exp(-array/(2 * sigma * sigma))
     gauss1d_filter = np.ones(n)/np.sum(array) * array
     return gauss1d_filter
+
+
 
 #outer product를 통해 1차원 가우시안 커널을 2차원으로 만들어준다.
 def gauss2d(sigma):
@@ -79,8 +80,9 @@ def part1_4():
     filtered_array = gaussconvolve2d(array, 3)
     #convert the array back to unsigned integer format
     filtered_img = Image.fromarray(filtered_array.astype('uint8'))
+    filtered_img.show();
     
-    # filtered_img.save('result1_4.bmp', "BMP")
+    filtered_img.save('result1_4.bmp', "BMP")
     # print("--------- part1 ---------")
 
 # RGB이미지에 convolution연산 적용하기
@@ -111,12 +113,12 @@ def part2_1(image):
     low_freq_array[:,:,0] = red_filtered
     low_freq_array[:,:,1] = green_filtered
     low_freq_array[:,:,2] = blue_filtered
-
+    
     low_freq_img = Image.fromarray(low_freq_array.astype('uint8'))
     low_freq_img.show()
     #low_freq_img.save( image + "lf_img.bmp", 'BMP')
 
-    print("1.get_low_frequency_array")
+    #print("1.get_low_frequency_array")
     return low_freq_array
 
 
@@ -135,8 +137,9 @@ def part2_2(image):
     #plus margin(+128) to avoid minus value
     hf_image = Image.fromarray((high_frequency+128).astype('uint8'))
     hf_image.show()
-    hf_image.save(image + "hg.bmp", 'BMP')
-    print("2.get_high_frequency_array")
+    #hf_image.save(image + "hf.bmp", 'BMP')
+    #print("2.get_high_frequency_array")
+    
     return high_frequency
 
 def part2_3():
@@ -158,20 +161,21 @@ def part2_3():
     hybrid_img.save('hybrid_img.bmp', 'BMP')
     return hybrid_img
 
-def my_naive_sub_sampling():
-    im = Image.open('hybrid_img.bmp')
-    array = np.asarray(im)
-    sampled = array[::2, ::2]
-    Image.fromarray(sampled).save('half.bmp', 'bmp')
-    sampled = sampled[::2, ::2]
-    Image.fromarray(sampled).save('half_half.bmp', 'bmp')
-    sampled = sampled[::2, ::2]
-    Image.fromarray(sampled).save('half_half_half.bmp', 'bmp')
+# def my_naive_sub_sampling():
+#     im = Image.open('hybrid_img.bmp')
+#     array = np.asarray(im)
+#     #짝수행, 짝수열만 선택하는 naive한 방식의 subsampling
+#     sampled = array[::2, ::2]
+#     Image.fromarray(sampled).save('half.bmp', 'BMP')
+#     sampled = sampled[::2, ::2]
+#     Image.fromarray(sampled).save('half_half.bmp', 'BMP')
+#     sampled = sampled[::2, ::2]
+#     Image.fromarray(sampled).save('half_half_half.bmp', 'BMP')
 
 #part1_1
-#print(boxfilter(3))
-#print(boxfilter(4))
-#print(boxfilter(7))
+# print(boxfilter(3))
+# print(boxfilter(4))
+# print(boxfilter(7))
 
 #part1_2
 # print(gauss1d(0.3))
@@ -183,10 +187,10 @@ def my_naive_sub_sampling():
 # print(gauss2d(0.5))
 # print(gauss2d(1))
 
-# part1_4()
+part1_4()
 
 # part2_1('1b_mandela.bmp')
 # part2_2('1a_steve.bmp')
 
 part2_3()
-# my_naive_sub_sampling();
+# my_naive_sub_sampling()
