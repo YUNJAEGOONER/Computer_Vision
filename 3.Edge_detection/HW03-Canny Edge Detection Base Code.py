@@ -2,11 +2,7 @@ from PIL import Image
 import math
 import numpy as np
 
-"""
-Get and use the functions associated with gaussconvolve2d that you used in the last HW02.
-"""
-
-# 1차원 가우시안 필터
+# 1차원 가우시안 필터(HW2)
 def gauss1d(sigma):
     n = math.ceil(sigma * 6)
     if (n % 2 == 0) : n = n + 1
@@ -14,16 +10,14 @@ def gauss1d(sigma):
     array = np.arange(-range, range + 1, 1) ** 2
     array = np.exp(-array/(2 * sigma * sigma))
     gauss1d_filter = np.ones(n)/np.sum(array) * array
-
     return gauss1d_filter
 
-# 2차원 가우시안 필터
+# 2차원 가우시안 필터(HW2)
 def gauss2d(sigma):
     gauss2d_filter = np.outer(gauss1d(sigma), gauss1d(sigma)) 
-
     return gauss2d_filter
 
-#convolution 
+# convolution(HW2)
 def convolve2d(array,filter):
     image_x = len(array[0])
     image_y = len(array)
@@ -39,21 +33,15 @@ def convolve2d(array,filter):
     
     return filtered_array 
 
-#convolution using gaussian 2d filter
+# convolution using gaussian 2d filter(HW2)
 def gaussconvolve2d(array,sigma):
     filter = gauss2d(sigma)   
     filtered_array = convolve2d(array, filter)
 
     return filtered_array 
 
+# 가우시안 필터를 적용해 이미지의 노이즈를 제거
 def reduce_noise(img):
-
-    """ Return the gray scale gaussian filtered image with sigma=1.6
-    Args:
-        img: RGB image. Numpy array of shape (H, W, 3).
-    Returns:
-        res: gray scale gaussian filtered image (H, W).
-    """
     original = img
 
     # convert rgb image to grayscale image
@@ -65,60 +53,54 @@ def reduce_noise(img):
     #denoise using gaussian filter  
     res = gaussconvolve2d(array, 1.6)
 
+    #to show both pictures(blurred grayscale img & oringinal RGB img)
     gray_blured = Image.fromarray(res.astype('uint8'))
-
     merged = Image.new('RGB',(len(array[0]) * 2, len(array)))
     merged.paste(original, (0,0))
     merged.paste(gray_blured, (480,0))
     merged.show()
 
-    #return array(=blurred image)
     return res
+
 
 # sobel 필터 : edge 계산할 때 사용하는 필터
 # 가우시안필터에 미분필터를 사용해 convolution
 # 노이즈제거 + edgedetection (소벨필터에서의 가우시안의 효과는 미비)
 def sobel_filters(img):
-    """ Returns gradient magnitude and direction of input img.
-    Args:
-        img: Grayscale image. Numpy array of shape (H, W).
-    Returns:
-        G: Magnitude of gradient at each pixel in img.
-            Numpy array of shape (H, W).
-        theta: Direction of gradient at each pixel in img.
-            Numpy array of shape (H, W).
-    Hints:
-        - Use np.hypot and np.arctan2 to calculate square root and arctan
-    """
 
-    #sobel filter
-    X_filter = np.array([[1, 0, -1],[2, 0, -2],[1, 0, -1]], np.float32)
-    Y_filter = np.array([[-1, -2, -1],[0, 0, 0], [1, 2, 1]], np.float32)
+    # sobel filter
+    # Sobel filter 적용 후, gradient magnitude를 구하게 되면
+    # blured edge(두꺼운 엣지 = gradient magnitude)를 얻을 수 있다.
+    X_filter = np.array([[1, 0, -1],[2, 0, -2],[1, 0, -1]])
+    Y_filter = np.array([[-1, -2, -1],[0, 0, 0], [1, 2, 1]])
 
     #calculate the gradient
     X_gradient = convolve2d(img, X_filter)
     Y_gradient = convolve2d(img, Y_filter)
-
+    
+    #get gradient magnitude using x_gradient & y_gradient
     #elements of G = gradient magnitude
     #value = 0에서 255사이의 값을 갖는다.
     G = np.hypot(X_gradient, Y_gradient)
     G = G / np.max(G) * 255
 
     #elements of theta = theta value
+    #get direction of graident 
     theta = np.arctan2(Y_gradient, X_gradient)
     
     return (G, theta)
 
+# Non-maximum surpreesion
+# Gradient magnitude(Blurred edge)를 샤프하게 만들어준다.
+"""
+    1. 현재 pixel의 direction을 계산한다.
+    2. direction의 방향에 가장 일치하는 pixel과
+       그 반대 방향의 pixel의 maginitude 값을 얻는다.
+    3. 2번에서 얻은 두 pixel의 maginitude보다 현재
+       pixel의 maginitude가 크다면 magnitude값을 유지한다.
+       그렇지 않다면(두 값과 비교해 최댓값이 아니라면) 0으로 만든다.
+"""
 def non_max_suppression(G, theta):
-    """ Performs non-maximum suppression.
-    This function performs non-maximum suppression along the direction
-    of gradient (theta) on the gradient magnitude image (G).
-    Args:
-        G: gradient magnitude image with shape of (H, W).
-        theta: direction of gradients with shape of (H, W).
-    Returns:
-        res: non-maxima suppressed image.
-    """
     # convert radian value to dgree
     # 1-2사분면에 대해서는 양의 값 / 3-4분면에 대해서는 음의 값을 갖는다.
     dgree = (theta * 180)/np.pi
@@ -155,18 +137,18 @@ def non_max_suppression(G, theta):
     G = NMS
     return G
 
-# NMS 결과 이미지를 3가지 카테고리로 구분
-# Strong / Weak / non-relevant
+# NMS 결과 이미지를 3가지 카테고리로 분류
+# Strong = 255 / Weak = 80 / non-relevant = 0
 def double_thresholding(img):
-    """ 
-    Args:
-        img: numpy array of shape (H, W) representing NMS edge response.
-    Returns:
-        res: double_thresholded image.
-    """
+
+    print(np.max(img), np.min(img))
+    
+    # 2개의 임계 값 계산
     diff = np.max(img) - np.min(img)
     T_H = np.min(img) + diff * 0.15
     T_L = np.min(img) + diff * 0.03
+
+    # print(T_H, T_L)
 
     check = 0;
 
@@ -182,7 +164,9 @@ def double_thresholding(img):
                 img[i][j] = 0
                 check = check + 1
     
-    print(check)
+    # print(check)
+    print(img)
+
     return img
 
 def dfs(img, res, i, j, visited=[]):
@@ -205,25 +189,16 @@ def dfs(img, res, i, j, visited=[]):
                 # 재귀 호출을 통해 res[i, j] = 255 이 수행되면서 Weak(80)에 해당하는 픽셀이 Strong(255)으로 변경
                 dfs(img, res, ii, jj, visited)
 
+
+# Strong edge 주변의(연결된) Weak edge는 모두 Strong으로 바꾸어준다.
+# Binary ouput(edge이다/edge가 아니다)로 만들어 주는 과정이다.
 def hysteresis(img):
-    """ Find weak edges connected to strong edges and link them.
-    Iterate over each pixel in strong_edges and perform depth first
-    search across the connected pixels in weak_edges to link them.
-    Here we consider a pixel (a, b) is connected to a pixel (c, d)
-    if (a, b) is one of the eight neighboring pixels of (c, d).
-    Args:
-        img: numpy array of shape (H, W) representing NMS edge response.
-    Returns:
-        res: hysteresised image.
-    """
-    #implement 
     res = np.zeros(img.shape)
     visited = []
-
-    for i in range(1, len(img)-1, 1):
-        for j in range(1, len(img[0])-1,1):
+    for i in range(0, len(img)-1, 1):
+        for j in range(0, len(img[0])-1,1):
             # Strong 주변의 weak는 Strong으로 바꾸어준다
-            # Strong 주변 픽셀을 탐색하기 위하여 depth first search 수행 
+            # Strong 주변 픽셀을 탐색하기 위하여 depth-first-search 수행 
             if img[i][j] == 255:
                 dfs(img, res, i, j, visited)
     return res
@@ -245,7 +220,7 @@ def main():
     Image.fromarray(double_threshold_img.astype('uint8')).save('./iguana_double_thresholding.bmp', 'BMP')
 
     hysteresis_img = hysteresis(double_threshold_img)
+    # np.unique
     Image.fromarray(hysteresis_img.astype('uint8')).save('./iguana_hysteresis.bmp', 'BMP')
 
 main()
-
